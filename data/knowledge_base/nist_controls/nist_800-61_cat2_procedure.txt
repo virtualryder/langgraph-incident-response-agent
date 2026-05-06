@@ -1,0 +1,53 @@
+NIST SP 800-61 REV 2 — INCIDENT HANDLING GUIDANCE
+Category 2: Denial of Service
+Source: NIST Special Publication 800-61 Revision 2, Section 3.2
+
+MANDATORY REPORTING TIMELINE
+Federal agencies must report CAT 2 incidents to US-CERT within 2 hours of detection.
+State agencies receiving federal funding must follow state ISSO reporting chain
+within 2 hours, which triggers federal notification if cross-agency impact exists.
+
+REQUIRED REPORTING FIELDS (US-CERT Federal Incident Notification)
+1. Incident category and functional impact
+2. Information impact (PII/CUI exposure determination)
+3. Recoverability (recoverable, recoverable with supplemental resources, not recoverable)
+4. Number of records/systems affected
+5. Attack vector (if known)
+6. Current status
+7. Mitigating factors
+8. Point of contact for follow-up
+
+CONTAINMENT STRATEGIES FOR CAT 2 DoS
+Immediate actions:
+- Identify and isolate affected components
+- Apply rate limiting or traffic shaping if external attack
+- Isolate batch/background processes from citizen-facing traffic
+- Scale out if cloud infrastructure allows
+
+Eradication:
+- Fix root cause before restoring full service
+- Do not restore service to a broken state — validate health checks
+
+Recovery:
+- Restore service incrementally, monitoring error rates
+- Validate with synthetic transaction before public announcement
+- Document all changes made during incident for post-mortem
+
+POST-INCIDENT ACTIVITIES (NIST 800-61 Section 3.4)
+Required within 30 days:
+- Lessons learned meeting with all responders
+- Post-incident report including timeline, root cause, and corrective actions
+- Update incident response plan if gaps identified
+- Brief CISO and system owner
+
+EVIDENCE PRESERVATION
+All logs, configurations, and tool outputs must be preserved for:
+- 3 years minimum (standard federal records retention)
+- Duration of any related audit or investigation
+- IG review if citizen impact > 10,000 records or > $100,000 estimated damage
+
+PRIVACY ACT CONSIDERATIONS (CAT 2 Specific)
+CAT 2 incidents are availability incidents — typically do NOT trigger Privacy Act
+notification unless error logs, debug output, or application errors expose PII.
+Review application error logs carefully for session tokens, SSNs, or benefit data
+before closing incident as non-PII.

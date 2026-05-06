@@ -1,0 +1,48 @@
+PAST INCIDENT REPORT
+Incident ID: INC-2024-0312
+System: BEACON Benefits Portal
+FISMA Category: CAT 2 — Denial of Service
+Severity: P1
+Date: March 12, 2024
+Duration: 1 hour 47 minutes
+Citizens Affected: ~31,000
+
+SUMMARY
+BEACON citizen portal experienced complete unavailability during Tuesday morning
+filing window due to database connection pool exhaustion. Root cause was a
+configuration drift: the prod environment had maximumPoolSize=5 while staging
+had maximumPoolSize=20 after an unreviewed config change three weeks prior.
+
+ROOT CAUSE
+Config drift between environments. A developer updated staging application.properties
+to test higher pool sizes but the change was not included in the prod deployment.
+When the monthly benefit processing job ran alongside citizen filing traffic,
+the pool of 5 connections was exhausted within 4 minutes.
+
+TIMELINE
+08:42 AM — Benefit processing job starts (scheduled)
+08:46 AM — First HikariPool warning in Splunk
+08:48 AM — First citizen-facing 503 errors
+08:51 AM — CloudWatch alarm triggers, PagerDuty pages on-call
+09:03 AM — Root cause identified via Splunk + GitHub comparison
+09:15 AM — Emergency CAB convened (phone), pool increase approved
+09:28 AM — Hotfix deployed
+09:35 AM — Error rate returns to normal
+10:35 AM — Incident closed
+
+CORRECTIVE ACTIONS TAKEN
+1. [COMPLETED] Increase maximumPoolSize to 20 in all environments
+2. [COMPLETED] Add config drift detection to deployment pipeline
+3. [COMPLETED] Add HikariPool utilization alert at 75%
+4. [COMPLETED] Separate citizen filing traffic from batch job traffic (load balancer rules)
+5. [IN PROGRESS] Capacity planning review for peak windows
+
+US-CERT REPORTING
+Reported to US-CERT within 2-hour window: YES
+FISMA CAT 2 report filed at 10:47 AM (59 minutes after detection)
+
+LESSONS LEARNED
+- Config drift between environments is a silent P1 risk
+- Pool exhaustion warning should alert at 75%, not 100%
+- Batch jobs should run in off-peak windows or separate connection pools
+- On-call engineers need direct RDS console access to diagnose faster

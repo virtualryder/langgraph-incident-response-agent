@@ -1,0 +1,33 @@
+INCIDENT REPORT — INITIAL FILING
+
+Incident ID: INC-2025-0847
+System: BEACON Benefits Portal (Bay State Department of Benefits)
+Reported By: Sarah Chen, On-Call SRE
+Detection Time: 2025-05-06T09:09:00
+Filing Time: 2025-05-06T09:17:00
+
+INCIDENT DESCRIPTION:
+BEACON citizen benefits portal is returning HTTP 503 Service Unavailable errors
+to all users attempting to file weekly unemployment claims. This began at
+approximately 9:09 AM during the Monday morning peak filing window.
+
+Symptoms observed:
+- 100% of POST /api/v2/claims/weekly requests returning 503
+- PagerDuty alert triggered at 9:13 AM from CloudWatch alarm BEACON-App-ErrorRate-Critical
+- Nginx access logs showing upstream connect failures
+- Application appears to be running (pods healthy in ECS) but not serving traffic
+
+Citizens impacted: Monday is the highest filing day — approximately 47,000 weekly
+unemployment claimants file on Monday mornings. Weekly benefit disbursement
+of ~$3.2M is at risk if filing window closes without resolution.
+
+SNAP eligibility check API also reporting degraded performance (elevated latency,
+some timeouts) — may be related or separate issue.
+
+No scheduled maintenance window was active. Last deployment was approximately
+36 hours ago (Friday afternoon).
+
+Initial investigation: Application logs show database-related errors but full
+root cause not yet determined. No evidence of external attack at this time.
+Need full investigation to confirm root cause and determine if citizen PII
+was exposed in any error conditions.

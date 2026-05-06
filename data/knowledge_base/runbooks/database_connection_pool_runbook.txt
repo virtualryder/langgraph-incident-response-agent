@@ -1,0 +1,60 @@
+RUNBOOK: Database Connection Pool Exhaustion
+System: BEACON Benefits Portal
+Owner: Platform Engineering Team
+Last Updated: December 2024
+Severity: P1/P2
+
+SYMPTOMS
+- HTTP 503 errors on citizen-facing endpoints
+- HikariCP logs: "Connection is not available, request timed out after Xms"
+- CloudWatch DatabaseConnections alarm in ALARM state
+- Application CPU LOW while error rate HIGH (threads blocked on DB wait)
+- Splunk: "Pool stats (total=N, active=N, idle=0, waiting=X)"
+
+IMMEDIATE TRIAGE (< 5 minutes)
+1. Check CloudWatch: BEACON-RDS-DatabaseConnections-High alarm status
+2. Check Splunk: index=application "HikariPool" | stats count by message | sort -count
+3. Check GitHub: any recent commits to application.properties or database config
+4. Check RDS: actual max_connections vs current usage
+
+DIAGNOSIS CHECKLIST
+[ ] Is pool maxed? (active=total, idle=0 in Splunk)
+[ ] What is maximumPoolSize in deployed config? (should be 50, not 10)
+[ ] Did a recent deploy change DB config? Check git log -- src/main/resources/
+[ ] Is RDS CPU maxed? (if yes: DB overload, not pool exhaustion)
+[ ] Is EC2 CPU low? (if yes: threads blocked on DB wait = pool exhaustion confirmed)
+
+ROOT CAUSE DETERMINATION
+Connection pool exhaustion vs DB overload:
+- Pool exhaustion: High error rate + LOW app CPU + HIGH connection count + idle=0
+- DB overload: High error rate + HIGH RDS CPU + HIGH RDS connections
+
+REMEDIATION — OPTION A: Emergency Config Change (requires CAB approval)
+1. Update src/main/resources/application-prod.properties:
+   hikari.maximumPoolSize=50  (from 10)
+   hikari.minimumIdle=10       (from 2)
+   hikari.connectionTimeout=5000  (revert from 30000 if recently changed)
+2. Open emergency PR, request expedited CAB review
+3. Deploy via standard pipeline (do not bypass — pipeline includes health checks)
+4. Monitor: Splunk for pool stats returning to healthy, CloudWatch alarms clearing
+
+REMEDIATION — OPTION B: RDS Connection Limit Increase (if pool fix insufficient)
+1. Check RDS max_connections: SHOW max_connections; in psql
+2. For db.r6g.2xlarge: default max_connections = 5000 (rarely the bottleneck)
+3. If needed: modify RDS parameter group (requires maintenance window)
+
+ROLLBACK PROCEDURE
+1. Revert application-prod.properties to previous commit
+2. Redeploy via pipeline
+3. Monitor for 15 minutes
+
+POST-INCIDENT ACTIONS
+- Add HikariCP alert at 70% pool utilization (not 100%)
+- Add capacity planning review for Monday surge windows
+- Review all open GitHub issues tagged "database" and "performance"
+- Update BEACON architecture docs with connection pool sizing guidance
+
+CONTACTS
+Platform Engineering On-Call: #beacon-platform-oncall (Slack)
+DBA Team: dba-team@baystate.gov
+CISO Notification: If impact > 1 hour or > 10,000 citizens affected

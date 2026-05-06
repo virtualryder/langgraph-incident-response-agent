@@ -1,0 +1,17 @@
+langgraph>=0.2.0
+langchain>=0.3.0
+langchain-openai>=0.2.0
+langchain-chroma>=0.1.4
+langchain-community>=0.3.0
+langsmith>=0.1.0
+openai>=1.40.0
+chromadb>=0.5.0
+markdown>=3.5.0
+python-dotenv>=1.0.0
+streamlit>=1.38.0
+pandas>=2.0.0
+
+# Optional live tool integrations
+PyGithub>=2.3.0          # GitHub API (GITHUB_TOKEN env var)
+boto3>=1.34.0            # AWS CloudWatch (AWS_* env vars)
+# splunk-sdk>=2.0.0      # Splunk API (SPLUNK_HOST, SPLUNK_TOKEN env vars)
