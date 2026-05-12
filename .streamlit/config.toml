@@ -1,0 +1,15 @@
+# Streamlit server config. The Dockerfile also sets these via env vars for
+# redundancy; both are honored.
+
+[server]
+headless = true
+address = "0.0.0.0"
+enableCORS = false
+enableXsrfProtection = true
+
+[browser]
+gatherUsageStats = false
+
+[theme]
+base = "light"
+primaryColor = "#C53030"

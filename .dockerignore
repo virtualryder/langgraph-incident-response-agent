@@ -1,0 +1,47 @@
+# ── VCS ─────────────────────────────────────────────────────────────────────
+.git
+.gitignore
+.gitattributes
+
+# ── Secrets — must never enter the image ───────────────────────────────────
+.env
+.env.*
+!.env.example
+
+# ── Local virtualenvs ──────────────────────────────────────────────────────
+.venv
+venv
+ENV
+
+# ── Python build & cache artifacts ─────────────────────────────────────────
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+*.egg-info
+build
+dist
+.pytest_cache
+.coverage
+htmlcov
+
+# ── IDE / OS ───────────────────────────────────────────────────────────────
+.vscode
+.idea
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# ── Runtime data — these get re-created in the container ───────────────────
+data/chroma_db
+data/chroma
+data/audit
+*.log
+
+# ── Tests — not needed at runtime ──────────────────────────────────────────
+tests
+
+# ── Docker self ─────────────────────────────────────────────────────────────
+Dockerfile
+.dockerignore
