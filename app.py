@@ -65,6 +65,8 @@ def init():
         "langsmith_key": os.environ.get("LANGSMITH_API_KEY", ""),
         "error_message": "",
         "cab_comments": "",
+        "investigation_mode": "parallel",
+        "react_budget": 6,
     }
     for k, v in defaults.items():
         if k not in st.session_state:
@@ -95,8 +97,34 @@ with st.sidebar:
     force_reingest = st.checkbox("Re-ingest Knowledge Base")
 
     st.markdown("---")
+    st.markdown("### Investigation Mode")
+    st.session_state.investigation_mode = st.radio(
+        "Pick the agentic pattern",
+        options=["parallel", "react"],
+        index=0 if st.session_state.investigation_mode == "parallel" else 1,
+        format_func=lambda v: {
+            "parallel": "🔀 Parallel (map-reduce, Send())",
+            "react":    "🔁 ReAct (iterative, dynamic tool choice)",
+        }[v],
+        help=(
+            "Parallel: pre-fetches GitHub + CloudWatch + Splunk, generates 4-5 hypotheses, "
+            "investigates them simultaneously via LangGraph Send(). Best for major incidents.\n\n"
+            "ReAct: agent dynamically picks which tool to call next based on what it's already "
+            "found, and submits a root cause when confident. Bounded by a tool-call budget. "
+            "Best for tier-1 triage of single alerts."
+        ),
+    )
+    if st.session_state.investigation_mode == "react":
+        st.session_state.react_budget = st.slider(
+            "ReAct tool-call budget",
+            min_value=3, max_value=10, value=st.session_state.react_budget,
+            help="Max tool calls before the agent is forced to commit to a hypothesis.",
+        )
+
+    st.markdown("---")
     st.markdown("### Workflow")
-    st.markdown("""
+    if st.session_state.investigation_mode == "parallel":
+        st.markdown("""
 1. 🔺 Triage (FISMA + clock)
 2. 📖 RAG (runbooks + past incidents)
 3. 🔧 Tools (GitHub · CloudWatch · Splunk)
@@ -106,7 +134,19 @@ with st.sidebar:
 7. 👤 **CAB approval gate**
 8. 🛠️ Remediation steps
 9. 📋 NIST 800-61 post-mortem
-    """)
+        """)
+    else:
+        st.markdown(f"""
+1. 🔺 Triage (FISMA + clock)
+2. 📖 RAG (runbooks + past incidents)
+3. 🔁 **ReAct loop** (≤ {st.session_state.react_budget} tool calls)
+   - Plan → tool → finding → repeat → submit
+4. 💥 Blast radius + citizen impact
+5. ⚖️ FISMA compliance package
+6. 👤 **CAB approval gate**
+7. 🛠️ Remediation steps
+8. 📋 NIST 800-61 post-mortem
+        """)
 
     if st.session_state.langsmith_key:
         st.success("LangSmith: ON")
@@ -259,7 +299,13 @@ if run_btn and ready:
     st.session_state.run_stage = "running"
     st.session_state.thread_id = str(uuid.uuid4())[:8]
 
-    with st.spinner("Running investigation (triage → RAG → tools → parallel hypotheses → blast radius → compliance)..."):
+    mode = st.session_state.investigation_mode
+    spinner_text = (
+        "Running investigation (triage → RAG → tools → parallel hypotheses → blast radius → compliance)..."
+        if mode == "parallel"
+        else f"Running investigation (triage → RAG → ReAct loop, ≤ {st.session_state.react_budget} tool calls → blast radius → compliance)..."
+    )
+    with st.spinner(spinner_text):
         try:
             from graph.graph import build_graph, run_graph
             graph, checkpointer = build_graph(
@@ -279,6 +325,8 @@ if run_btn and ready:
                 reported_by=reported_by,
                 raw_logs=raw_logs,
                 thread_id=st.session_state.thread_id,
+                investigation_mode=mode,
+                react_budget=st.session_state.react_budget,
             )
             st.session_state.graph_state = result
             st.session_state.run_stage = "awaiting_cab"
@@ -345,8 +393,42 @@ if st.session_state.run_stage == "awaiting_cab":
                     st.markdown(f"**#{p['rank']} ({p['count']:,} occurrences):** `{p['pattern'][:80]}`")
                     st.markdown(f"  → *{p['significance']}*")
 
-    # Hypotheses
-    st.markdown('<div class="section-header">Root Cause Hypotheses (Parallel Investigation)</div>', unsafe_allow_html=True)
+    # Investigation results — mode-aware
+    mode_label = state.get("investigation_mode", "parallel")
+    if mode_label == "react":
+        st.markdown(
+            '<div class="section-header">ReAct Investigation Trail (Iterative)</div>',
+            unsafe_allow_html=True,
+        )
+        actions = state.get("react_actions", [])
+        budget = state.get("react_budget", 6)
+        steps_used = len(actions)
+        st.caption(
+            f"Agent took **{steps_used}** investigation step(s) "
+            f"(budget: {budget}) before committing to a root cause."
+        )
+        if state.get("react_summary"):
+            st.info(state["react_summary"])
+        for a in actions:
+            with st.expander(
+                f"Step {a.get('step')}: `{a.get('action')}` — \"{a.get('focus','')}\""
+            ):
+                if a.get("rationale"):
+                    st.caption(f"**Rationale:** {a['rationale']}")
+                st.markdown(f"**Finding summary:** {a.get('finding_summary','')}")
+                if a.get("anomalies"):
+                    st.markdown("**Anomalies:**")
+                    for an in a["anomalies"]:
+                        st.markdown(f"- ⚠️ {an}")
+        st.markdown(
+            '<div class="section-header">Root Cause Submitted by Agent</div>',
+            unsafe_allow_html=True,
+        )
+    else:
+        st.markdown(
+            '<div class="section-header">Root Cause Hypotheses (Parallel Investigation)</div>',
+            unsafe_allow_html=True,
+        )
     st.markdown(state.get("hypothesis_summary", ""))
 
     hypotheses = state.get("ranked_hypotheses", state.get("hypotheses", []))

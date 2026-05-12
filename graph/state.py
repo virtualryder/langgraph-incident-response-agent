@@ -114,11 +114,30 @@ class IncidentState(TypedDict, total=False):
     splunk_findings: ToolFinding
     tool_summary: str               # Synthesized narrative from all 3 tools
 
+    # ── Investigation mode selector ──────────────────────────────────────────
+    # "parallel" → existing map-reduce path: tool_agent pre-fetches all 3 tools,
+    #              then Send() fan-out to N parallel hypothesis investigators.
+    # "react"    → ReAct iterative path: agent dynamically picks which tool to
+    #              call next based on accumulated evidence, until it submits a
+    #              root cause or runs out of investigation budget.
+    investigation_mode: Literal["parallel", "react"]
+
     # ── Hypothesis Agent (parallel Send()) ───────────────────────────────────
     hypotheses: Annotated[list[Hypothesis], operator.add]
     top_hypothesis: Hypothesis
     ranked_hypotheses: list[Hypothesis]     # All hypotheses sorted by confidence
     hypothesis_summary: str
+
+    # ── ReAct Investigation (iterative mode) ─────────────────────────────────
+    # Append-only trail of every action the agent took during ReAct investigation.
+    # Each entry: {"step": int, "action": str, "focus": str, "rationale": str,
+    #              "finding_summary": str, "anomalies": list[str]}
+    react_actions: Annotated[list[dict], operator.add]
+    react_step: int                         # Current turn counter (1-indexed)
+    react_budget: int                       # Max tool calls before forced submit (default 6)
+    react_next_action: dict                 # Most recent plan output — overwrites each turn
+    react_complete: bool                    # True once the synthesizer has run
+    react_summary: str                      # Human-readable narrative of the investigation
 
     # ── Blast Radius Agent ────────────────────────────────────────────────────
     affected_citizens_estimate: int
