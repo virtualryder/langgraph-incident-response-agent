@@ -389,21 +389,6 @@ The current build is a working portfolio-quality system. Reasonable production e
 
 ---
 
-## Why This Matters for FDE / AI Architect Roles
-
-This project demonstrates:
-
-1. **Advanced LangGraph patterns** — `Send()` map-reduce, not just linear chains
-2. **Regulatory compliance as a first-class feature** — FISMA, NIST 800-61, Privacy Act
-3. **Tool use with realistic integrations** — not mocked stubs, but API-shaped tools with live fallback
-4. **Production safety** — CAB gate, rollback plans, immutable audit trail
-5. **Public sector domain expertise** — US-CERT, FISMA categories, ATO risk, IG/GAO accountability
-6. **Deployable** — multi-stage Docker image, Railway IaC, persistent volume strategy
-
-When asked about this in an interview: *"I built a multi-agent LangGraph workflow that classifies incidents per FISMA, fans out parallel root cause hypotheses via Send(), queries GitHub, CloudWatch, and Splunk simultaneously, assesses citizen blast radius and SLO breach, routes through a Change Advisory Board approval gate, and produces a NIST SP 800-61 post-mortem — all with a live US-CERT reporting countdown, LangSmith observability, and Railway-deployable Docker packaging."*
-
----
-
 ## Repository Structure
 
 ```
