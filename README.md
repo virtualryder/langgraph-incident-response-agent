@@ -3,8 +3,6 @@
 
 **Production-ready agentic workflow for government incident response per NIST SP 800-61.**
 
-Built for forward-deployed AI architects who need portfolio projects that demonstrate real enterprise complexity — FISMA compliance, parallel reasoning, tool integration, and human approval gates — not generic chatbots.
-
 ---
 
 ## What This Demonstrates
@@ -338,8 +336,6 @@ This project demonstrates:
 3. **Tool use with realistic integrations** — not mocked stubs, but API-shaped tools with live fallback
 4. **Production safety** — CAB gate, rollback plans, immutable audit trail
 5. **Public sector domain expertise** — US-CERT, FISMA categories, ATO risk, IG/GAO accountability
-
-When asked about this in an interview: *"I built a multi-agent LangGraph workflow that classifies incidents per FISMA, fans out parallel root cause hypotheses via Send(), queries GitHub, CloudWatch, and Splunk simultaneously, assesses citizen blast radius and SLO breach, routes through a Change Advisory Board approval gate, and produces a NIST SP 800-61 post-mortem — all with a live US-CERT reporting countdown and LangSmith observability."*
 
 ---
 
